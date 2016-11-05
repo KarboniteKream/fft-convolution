@@ -1,0 +1,9 @@
+.idea/Convolution.iml
+.idea/workspace.xml
+.idea/tasks.xml
+
+Debug/Convolution
+Debug/output.jpg
+
+Release/Convolution
+Release/output.jpg
