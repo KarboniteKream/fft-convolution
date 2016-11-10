@@ -6,3 +6,4 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/bin")
 
 set(SOURCE_FILES main.cpp)
 add_executable(fft-convolution ${SOURCE_FILES})
+target_link_libraries(fft-convolution pthread)

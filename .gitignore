@@ -3,4 +3,4 @@
 .idea/tasks.xml
 
 bin/fft-convolution*
-bin/output.jpg
+bin/output.pgm

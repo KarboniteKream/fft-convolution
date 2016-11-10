@@ -1,6 +1,9 @@
 #include <complex>
 #include <iostream>
 #include <malloc.h>
+#include <pthread.h>
+
+#ifdef _WIN32
 #include <windows.h>
 
 double PCFreq = 0.0;
@@ -19,6 +22,7 @@ double GetCounter() {
     QueryPerformanceCounter(&li);
     return double(li.QuadPart - CounterStart) / PCFreq;
 }
+#endif
 
 const double PI = 3.141592653589793238460;
 typedef std::complex<double> Complex;
@@ -169,26 +173,34 @@ uint32_t nextPOT(uint32_t n) {
     return n;
 }
 
+void *PrintHello(void *threadid) {
+    long tid = (long)threadid;
+    printf("Hello World! It's me, thread #%ld!\n", tid);
+    pthread_exit(NULL);
+}
+
 int main(int argc, char **argv) {
     if(argc < 2) {
         std::cerr << "Missing input filename." << std::endl;
         return 1;
     }
 
+    const uint8_t NUM_THREADS = 5;
+    pthread_t threads[NUM_THREADS];
+
+    for(long t = 0; t < NUM_THREADS; t++) {
+        printf("In main: creating thread %ld\n", t);
+        pthread_create(&threads[t], NULL, PrintHello, (void *)t);
+    }
+
     char magic[2];
     uint32_t w, h, d;
     uint8_t **data = read(argv[1], magic, &w, &h, &d);
 
-    double kdata[9][9] = {
-        {4, 3, 2, 1, 0, -1, -2, -3, -4},
-        {5, 4, 3, 2, 0, -2, -3, -4, -5},
-        {6, 5, 4, 3, 0, -3, -4, -5, -6},
-        {7, 6, 5, 4, 0, -4, -5, -6, -7},
-        {8, 7, 6, 5, 0, -5, -6, -7, -8},
-        {7, 6, 5, 4, 0, -4, -5, -6, -7},
-        {6, 5, 4, 3, 0, -3, -4, -5, -6},
-        {5, 4, 3, 2, 0, -2, -3, -4, -5},
-        {4, 3, 2, 1, 0, -1, -2, -3, -4},
+    double kdata[3][3] = {
+        {0.0625, 0.125, 0.0625},
+        {0.125, 0.25, 0.125},
+        {0.0625, 0.125, 0.0625},
     };
 
     uint32_t kw = sizeof(kdata) / sizeof(kdata[0]);
@@ -217,13 +229,21 @@ int main(int argc, char **argv) {
         }
     }
 
+    #ifdef _WIN32
     StartCounter();
+    #endif
     separable_fft(image, width, height, true);
+    #ifdef _WIN32
     std::cout << GetCounter() << std::endl;
+    #endif
 
+    #ifdef _WIN32
     StartCounter();
+    #endif
     separable_fft(kernel, width, height, true);
+    #ifdef _WIN32
     std::cout << GetCounter() << std::endl;
+    #endif
 
     for(uint32_t i = 0; i < height; i++) {
         for(uint32_t j = 0; j < width; j++) {
@@ -236,9 +256,13 @@ int main(int argc, char **argv) {
     }
     free(kernel);
 
+    #ifdef _WIN32
     StartCounter();
+    #endif
     separable_fft(image, width, height, false);
+    #ifdef _WIN32
     std::cout << GetCounter() << std::endl;
+    #endif
 
     for(uint32_t i = 0; i < h; i++) {
         for(uint32_t j = 0; j < w; j++) {
@@ -247,6 +271,8 @@ int main(int argc, char **argv) {
     }
 
     write("output.pgm", magic, w, h, d, data);
+
+    pthread_exit(NULL);
 
     return 0;
 }
